@@ -11,7 +11,7 @@ import (
 
 var Version string = "v0.0.1"
 var outputFileName, tagList string
-var oneFilePerSeries, recurseIntoDirectories bool
+var oneFilePerSeries, recurseIntoDirectories, stopOnError bool
 
 func init() {
 	flag.Usage = func() {
@@ -22,6 +22,7 @@ func init() {
 	flag.StringVar(&outputFileName, "o", "dicom-batch.xlsx", "name of `file` to write results to.")
 	flag.BoolVar(&oneFilePerSeries, "1", false, "Consider only 1 file per series.")
 	flag.BoolVar(&recurseIntoDirectories, "r", false, "Recurse into directories.")
+	flag.BoolVar(&stopOnError, "s", false, "Stop parsing when encountering an error, rather than skipping the file.")
 	flag.StringVar(&tagList, "t", "PatientID, StudyDescription", "Comma separated list of DICOM tag keywords. Spaces are stripped.")
 
 	flag.Parse()
@@ -34,6 +35,7 @@ func main() {
 		OneFilePerSeries: oneFilePerSeries,
 		OutputFileName:   outputFileName,
 		TagList:          tagList,
+		StopOnError:      stopOnError,
 	})
 	if err != nil {
 		log.Fatal(err)

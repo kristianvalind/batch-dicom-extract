@@ -58,7 +58,7 @@ func NewParser(pi *ParserInput) (*Parser, error) {
 
 	// Write headers to Excel file
 	excelFile.SetSheetName("Sheet1", sheetName)
-	err := excelFile.SetSheetRow(sheetName, "A2", &tagStrings)
+	err := excelFile.SetSheetRow(sheetName, "A1", &tagStrings)
 	if err != nil {
 		return nil, fmt.Errorf("error when writing output header: %w", err)
 	}
@@ -84,6 +84,7 @@ func (p *Parser) Parse() error {
 				return fmt.Errorf("error when getting file info: %w", err)
 			} else {
 				log.Printf("error when getting file info: %v", err.Error())
+				continue
 			}
 		}
 
@@ -111,6 +112,7 @@ func (p *Parser) Parse() error {
 						return fmt.Errorf("error when recursing into directory: %w", err)
 					} else {
 						log.Printf("error when recursing into directory: %v", err.Error())
+						continue
 					}
 				}
 			}
@@ -133,6 +135,7 @@ func (p *Parser) Parse() error {
 				return fmt.Errorf("error when parsing dicom file %v: %w", fileName, err)
 			} else {
 				log.Printf("error when parsing dicom file %v: %v", fileName, err)
+				continue
 			}
 		}
 	}

@@ -29,6 +29,7 @@ type Parser struct {
 	tagList       []*dicomtag.Info
 	fileList      []string
 	excelFile     *excelize.File
+	sheetName     string
 	visitedSeries map[string]bool
 }
 
@@ -50,10 +51,19 @@ func NewParser(pi *ParserInput) (*Parser, error) {
 		tagList = append(tagList, &dicomTag)
 	}
 
+	excelFile := excelize.NewFile()
+
+	sheetName := "Results"
+
+	// Write headers to Excel file
+	excelFile.SetSheetName("Sheet1", sheetName)
+	excelFile.SetSheetRow(sheetName, "A1", &tagStrings)
+
 	return &Parser{
 		input:         *pi,
 		tagList:       tagList,
-		excelFile:     excelize.NewFile(),
+		excelFile:     excelFile,
+		sheetName:     sheetName,
 		fileList:      make([]string, 0),
 		visitedSeries: make(map[string]bool),
 	}, nil
@@ -122,6 +132,18 @@ func (p *Parser) Parse() error {
 		}
 	}
 
+	// Create and write output file
+	f, err := os.Create(p.input.OutputFileName)
+	if err != nil {
+		return fmt.Errorf("error in creating output file: %w", err)
+	}
+	defer f.Close()
+
+	err = p.excelFile.Write(f)
+	if err != nil {
+		return fmt.Errorf("error in writing output file: %w", err)
+	}
+
 	return nil
 }
 
@@ -150,6 +172,11 @@ func (p *Parser) parseDicom(fileName string) error {
 	}
 
 	p.visitedSeries[siUID] = true
+
+	err = p.extractAndWrite(&dataset)
+	if err != nil {
+		return fmt.Errorf("error in extracting dicom tag data: %w", err)
+	}
 
 	return nil
 }

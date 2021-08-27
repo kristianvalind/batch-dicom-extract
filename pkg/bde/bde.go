@@ -29,6 +29,7 @@ type Parser struct {
 	tagList       []*dicomtag.Info
 	fileList      []string
 	excelFile     *excelize.File
+	rowCounter    uint
 	sheetName     string
 	visitedSeries map[string]bool
 }
@@ -57,13 +58,17 @@ func NewParser(pi *ParserInput) (*Parser, error) {
 
 	// Write headers to Excel file
 	excelFile.SetSheetName("Sheet1", sheetName)
-	excelFile.SetSheetRow(sheetName, "A1", &tagStrings)
+	err := excelFile.SetSheetRow(sheetName, "A2", &tagStrings)
+	if err != nil {
+		return nil, fmt.Errorf("error when writing output header: %w", err)
+	}
 
 	return &Parser{
 		input:         *pi,
 		tagList:       tagList,
 		excelFile:     excelFile,
 		sheetName:     sheetName,
+		rowCounter:    2,
 		fileList:      make([]string, 0),
 		visitedSeries: make(map[string]bool),
 	}, nil

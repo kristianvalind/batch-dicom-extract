@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/suyashkumar/dicom"
 	dicomtag "github.com/suyashkumar/dicom/pkg/tag"
 	"github.com/xuri/excelize/v2"
 )
@@ -20,6 +21,7 @@ type ParserInput struct {
 	OutputFileName   string
 	TagList          string
 	StopOnError      bool
+	DICOMSuffix      string
 }
 
 type Parser struct {
@@ -27,7 +29,7 @@ type Parser struct {
 	tagList       []*dicomtag.Info
 	fileList      []string
 	excelFile     *excelize.File
-	visitedSeries []string
+	visitedSeries map[string]bool
 }
 
 func NewParser(pi *ParserInput) (*Parser, error) {
@@ -53,7 +55,7 @@ func NewParser(pi *ParserInput) (*Parser, error) {
 		tagList:       tagList,
 		excelFile:     excelize.NewFile(),
 		fileList:      make([]string, 0),
-		visitedSeries: make([]string, 0),
+		visitedSeries: make(map[string]bool),
 	}, nil
 }
 
@@ -81,7 +83,10 @@ func (p *Parser) Parse() error {
 					if !info.IsDir() {
 						// Skip hidden files and directories
 						if !strings.HasPrefix(path, ".") {
-							p.fileList = append(p.fileList, path)
+							// Check suffix matching
+							if strings.HasSuffix(strings.ToLower(fileName), strings.ToLower(p.input.DICOMSuffix)) {
+								p.fileList = append(p.fileList, path)
+							}
 						}
 					}
 					return nil
@@ -97,9 +102,54 @@ func (p *Parser) Parse() error {
 
 		} else {
 			// File is not directory
-			p.fileList = append(p.fileList, fileName)
+
+			// Check suffix matching
+			if strings.HasSuffix(strings.ToLower(fileName), strings.ToLower(p.input.DICOMSuffix)) {
+				p.fileList = append(p.fileList, fileName)
+			}
 		}
 	}
+
+	// Visit files
+	for _, fileName := range p.fileList {
+		err := p.parseDicom(fileName)
+		if err != nil {
+			if p.input.StopOnError {
+				return fmt.Errorf("error when parsing dicom file %v: %w", fileName, err)
+			} else {
+				log.Printf("error when parsing dicom file %v: %v", fileName, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (p *Parser) parseDicom(fileName string) error {
+	dataset, err := dicom.ParseFile(fileName, nil)
+	if err != nil {
+		return fmt.Errorf("error parsing dicom file: %w", err)
+	}
+
+	// Check if series has been visited
+	siUIDElement, err := dataset.FindElementByTag(dicomtag.SeriesInstanceUID)
+	if err != nil {
+		return fmt.Errorf("error getting series instance uid: %w", err)
+	}
+
+	siUIDSlice, ok := siUIDElement.Value.GetValue().([]string)
+	if !ok {
+		return fmt.Errorf("series instance uid is not string slice")
+	}
+
+	siUID := siUIDSlice[0]
+
+	// If we have marked series as visited and only check once, we stop here
+	if p.visitedSeries[siUID] && p.input.OneFilePerSeries {
+		return nil
+	}
+
+	p.visitedSeries[siUID] = true
 
 	return nil
 }

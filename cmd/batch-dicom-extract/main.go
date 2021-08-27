@@ -10,7 +10,7 @@ import (
 )
 
 var Version string = "v0.0.1"
-var outputFileName, tagList string
+var outputFileName, tagList, dicomSuffix string
 var oneFilePerSeries, recurseIntoDirectories, stopOnError bool
 
 func init() {
@@ -22,8 +22,9 @@ func init() {
 	flag.StringVar(&outputFileName, "o", "dicom-batch.xlsx", "name of `file` to write results to.")
 	flag.BoolVar(&oneFilePerSeries, "1", false, "Consider only 1 file per series.")
 	flag.BoolVar(&recurseIntoDirectories, "r", false, "Recurse into directories.")
-	flag.BoolVar(&stopOnError, "s", false, "Stop parsing when encountering an error, rather than skipping the file.")
+	flag.BoolVar(&stopOnError, "e", false, "Stop parsing when encountering an error, rather than skipping the file.")
 	flag.StringVar(&tagList, "t", "PatientID, StudyDescription", "Comma separated list of DICOM tag keywords. Spaces are stripped.")
+	flag.StringVar(&dicomSuffix, "s", ".dcm", "File name `suffix` of files to consider.")
 
 	flag.Parse()
 }
@@ -36,6 +37,7 @@ func main() {
 		OutputFileName:   outputFileName,
 		TagList:          tagList,
 		StopOnError:      stopOnError,
+		DICOMSuffix:      dicomSuffix,
 	})
 	if err != nil {
 		log.Fatal(err)

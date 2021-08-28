@@ -96,15 +96,16 @@ func (p *Parser) Parse() error {
 				continue
 			} else {
 				err := filepath.Walk(fileName, func(path string, info fs.FileInfo, err error) error {
-					if !info.IsDir() {
-						// Skip hidden files and directories
-						if !strings.HasPrefix(path, ".") {
+					// Skip hidden files and directories
+					if !strings.HasPrefix(path, ".") {
+						if !info.IsDir() {
 							// Check suffix matching
-							if strings.HasSuffix(strings.ToLower(fileName), strings.ToLower(p.input.DICOMSuffix)) {
+							if strings.HasSuffix(strings.ToLower(path), strings.ToLower(p.input.DICOMSuffix)) {
 								p.fileList = append(p.fileList, path)
 							}
 						}
 					}
+
 					return nil
 				})
 				if err != nil {

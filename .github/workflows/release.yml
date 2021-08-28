@@ -26,6 +26,6 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
-          batch-dicom-extract-windows
+          batch-dicom-extract-windows.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

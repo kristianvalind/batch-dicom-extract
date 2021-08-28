@@ -26,7 +26,6 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
-          simpledp-linux.zip
-          simpledp-windows.zip
+          batch-dicom-extract-windows
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
